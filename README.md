@@ -1,5 +1,3 @@
----
-
 ## NodePrisma
 
 ## Project setup
