@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "## Project setup",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
