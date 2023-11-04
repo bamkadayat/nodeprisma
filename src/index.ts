@@ -1,24 +1,13 @@
-import express from "express";
-import http from "http";
-import bodyparser from "body-parser";
-import cookieParser from "cookie-parser";
-import compression from "compression";
-import cors from "cors";
+// src/index.ts
+import express, { Request, Response } from "express";
 
 const app = express();
+const port = process.env.PORT || 3000;
 
-app.use(
-  cors({
-    credentials: true,
-  })
-);
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hello World!");
+});
 
-app.use(compression());
-app.use(cookieParser());
-app.use(bodyparser.json());
-
-const server = http.createServer(app);
-
-server.listen(8080, () => {
-  console.log("Server is running on port 8080");
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
