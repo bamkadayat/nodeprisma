@@ -7,7 +7,8 @@
   "scripts": {
     "start": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
-    "serve": "node dist/index.js"
+    "serve": "node dist/index.js",
+    "postinstall": "npx prisma generate"
   },
   "keywords": [],
   "author": "",
