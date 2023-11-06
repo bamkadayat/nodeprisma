@@ -1,14 +1,15 @@
 import express from "express";
+import { userRouter } from "./api";
 
 const app = express();
-const port = 3000; // You can choose any port
+const PORT = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-  res.send("Hello, world! You are Live now");
-});
+app.use(express.json());
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+app.use("/users", userRouter);
+
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
 
 export {}; // Add this if you don't have any other exports
