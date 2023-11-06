@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "## Project setup",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
     "serve": "node dist/index.js"
   },
