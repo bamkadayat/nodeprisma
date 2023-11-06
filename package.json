@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "## Project setup",
   "main": "index.js",
-  "type": "commonjs",
+  "module": "CommonJS",
   "scripts": {
     "start": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
