@@ -10,6 +10,9 @@
     "serve": "node dist/index.js",
     "postinstall": "npx prisma generate"
   },
+  "engines": {
+    "node": ">=16.13"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
