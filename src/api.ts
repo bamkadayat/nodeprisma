@@ -1,4 +1,3 @@
-// src/api.ts
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
@@ -14,8 +13,6 @@ const hashPassword = async (password: string): Promise<string> => {
 
 router.post("/", async (req, res) => {
   const { username, fullname, password } = req.body;
-
-  // Perform input validation here (omitted for brevity)
 
   try {
     // Hash password before saving to the database
@@ -55,6 +52,42 @@ router.get("/", async (req, res) => {
     res.status(200).json(users);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint to update a user
+router.patch("user/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const { username, fullname, password } = req.body;
+
+  try {
+    let updateData: any = {
+      username,
+      fullname,
+    };
+
+    // Update password only if it's provided
+    if (password) {
+      const hashedPassword = await hashPassword(password);
+      updateData.password = hashedPassword;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        fullname: true,
+        createdAt: true,
+        // Exclude password and other sensitive fields from the result
+      },
+    });
+
+    res.status(200).json(updatedUser);
+  } catch (error: any) {
+    // Handle potential errors
+    res.status(400).json({ error: error.message });
   }
 });
 
