@@ -47,7 +47,6 @@ router.get("/", async (req, res) => {
         id: true,
         username: true,
         fullname: true,
-        isValid: true,
         createdAt: true,
         // Exclude password and other sensitive fields from the result
       },
