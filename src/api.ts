@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
 });
 
 // Endpoint to update a user
-router.patch("user/:userId", async (req, res) => {
+router.patch("/user/:userId", async (req, res) => {
   const { userId } = req.params;
   const { username, fullname, password } = req.body;
 
@@ -65,8 +65,6 @@ router.patch("user/:userId", async (req, res) => {
       username,
       fullname,
     };
-
-    // Update password only if it's provided
     if (password) {
       const hashedPassword = await hashPassword(password);
       updateData.password = hashedPassword;
@@ -80,13 +78,29 @@ router.patch("user/:userId", async (req, res) => {
         username: true,
         fullname: true,
         createdAt: true,
-        // Exclude password and other sensitive fields from the result
       },
     });
 
     res.status(200).json(updatedUser);
   } catch (error: any) {
-    // Handle potential errors
+    console.error("Update Error:", error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Endpoint to delete a user
+router.delete("/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    await prisma.user.delete({
+      where: { id: parseInt(userId) },
+    });
+
+    res
+      .status(200)
+      .json({ message: `User with ID ${userId} successfully deleted` });
+  } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
 });
