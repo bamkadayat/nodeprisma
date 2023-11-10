@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
 });
 
 // Endpoint to update a user
-router.patch("/user/:userId", async (req, res) => {
+router.patch("/:userId", async (req, res) => {
   const { userId } = req.params;
   const { username, fullname, password } = req.body;
 
