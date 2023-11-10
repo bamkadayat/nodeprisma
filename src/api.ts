@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
         username,
         fullname,
         password: hashedPassword,
-        isValid: true, // or set based on your validation logic
+        isValid: false,
       },
     });
 
