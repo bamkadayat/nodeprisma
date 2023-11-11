@@ -10,14 +10,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
+
 model User {
   id        Int       @id @default(autoincrement())
   username  String    @unique
   fullname  String
-  password  String    // Consider storing hashed passwords only
+  password  String    
   isValid   Boolean   @default(false)
   createdAt DateTime  @default(now())
   posts     Post[]
+  role      Role      @default(USER)
 }
 
 model Post {

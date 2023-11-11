@@ -1,16 +1,12 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
+import { generateToken, hashPassword } from "./authUtils";
+import { isAdmin } from "./authMiddleware";
 
 const prisma = new PrismaClient();
 const router = Router();
 
-// Utility function to hash passwords
-const hashPassword = async (password: string): Promise<string> => {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-};
-
+// Insert user
 router.post("/", async (req, res) => {
   const { username, fullname, password } = req.body;
 
@@ -36,34 +32,47 @@ router.post("/", async (req, res) => {
   }
 });
 
-// New endpoint to get all users
-router.get("/", async (req, res) => {
+// POST /login
+router.post("/login", async (req, res) => {
+  const { username, password } = req.body;
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        fullname: true,
-        createdAt: true,
-        // Exclude password and other sensitive fields from the result
-      },
+    // Find the user by username
+    const user = await prisma.user.findUnique({
+      where: { username: username },
     });
 
-    res.status(200).json(users);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    // Compare the provided password with the hashed password in the database
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    // Generate a token for the user
+    const token = generateToken(user);
+
+    // Send the token to the client
+    res.json({ token });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Endpoint to update a user
 router.patch("/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { username, fullname, password } = req.body;
+  const { username, fullname, password, role } = req.body;
 
   try {
     let updateData: any = {
       username,
       fullname,
+      role,
     };
     if (password) {
       const hashedPassword = await hashPassword(password);
@@ -102,6 +111,26 @@ router.delete("/:userId", async (req, res) => {
       .json({ message: `User with ID ${userId} successfully deleted` });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// New endpoint to get all users
+router.get("/", isAdmin, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        fullname: true,
+        role: true,
+        createdAt: true,
+        // Exclude password and other sensitive fields from the result
+      },
+    });
+
+    res.status(200).json(users);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
