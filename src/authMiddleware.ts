@@ -7,7 +7,7 @@ export const isAdmin = async (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.headers["authorization"];
+  const token = req.headers["authorization"] || "";
   const role = await verifyTokenAndGetUserRole(token);
 
   if (role === "admin") {
