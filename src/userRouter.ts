@@ -2,6 +2,7 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { generateToken, hashPassword } from "./authUtils";
 import { isAdmin } from "./authMiddleware";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 const router = Router();

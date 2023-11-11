@@ -1,5 +1,9 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
+
+interface MyTokenPayload extends JwtPayload {
+  role?: string;
+}
 
 export const generateToken = (user: any) => {
   const secretKey = process.env.JWT_SECRET_KEY || "YOUR_SECRET_KEY";
@@ -25,7 +29,7 @@ export const verifyTokenAndGetUserRole = async (token: string) => {
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET_KEY || "YOUR_SECRET_KEY"
-    );
+    ) as MyTokenPayload;
     return decoded ? decoded.role : null;
   } catch (error) {
     console.error("Token verification error:", error);
