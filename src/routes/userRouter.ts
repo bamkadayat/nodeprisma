@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import { generateToken, hashPassword } from "./authUtils";
-import { isAdmin } from "./authMiddleware";
+import {
+  generateToken,
+  hashPassword,
+  getUserFromToken,
+} from "../auth/authUtils";
+import { isAdmin } from "../auth/authMiddleware";
 import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -131,6 +135,44 @@ router.get("/", isAdmin, async (req, res) => {
 
     res.status(200).json(users);
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /me - Get the current user's data
+router.get("/me", async (req, res) => {
+  const header = req.headers.authorization || "";
+  const token = header.split(" ")[1]; // Assuming the header is "Bearer [token]"
+
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  const userId = getUserFromToken(token);
+  if (!userId) {
+    return res.status(403).json({ error: "Invalid token" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        fullname: true,
+        role: true,
+        createdAt: true,
+        // Exclude password and other sensitive fields from the result
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error: any) {
+    console.error("Error fetching user data:", error);
     res.status(500).json({ error: error.message });
   }
 });

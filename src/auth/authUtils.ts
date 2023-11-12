@@ -6,10 +6,11 @@ interface MyTokenPayload extends JwtPayload {
 }
 
 export const generateToken = (user: any) => {
-  const secretKey = process.env.JWT_SECRET_KEY || "YOUR_SECRET_KEY";
+  const secretKey = process.env.JWT_SECRET_KEY || "MY_SECRET_KEY";
   const payload = {
     id: user.id,
     username: user.username,
+    role: user.role,
   };
   const options = { expiresIn: "2h" };
   return jwt.sign(payload, secretKey, options);
@@ -31,6 +32,19 @@ export const verifyTokenAndGetUserRole = async (token: string) => {
       process.env.JWT_SECRET_KEY || "YOUR_SECRET_KEY"
     ) as MyTokenPayload;
     return decoded ? decoded.role : null;
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return null;
+  }
+};
+
+export const getUserFromToken = (token: string) => {
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET_KEY || "YOUR_SECRET_KEY"
+    ) as JwtPayload;
+    return decoded.id;
   } catch (error) {
     console.error("Token verification error:", error);
     return null;
