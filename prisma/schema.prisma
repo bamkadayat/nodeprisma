@@ -15,7 +15,6 @@ enum Role {
   ADMIN
 }
 
-
 model User {
   id        Int       @id @default(autoincrement())
   username  String    @unique
@@ -25,6 +24,39 @@ model User {
   createdAt DateTime  @default(now())
   posts     Post[]
   role      Role      @default(USER)
+  orders    Order[]
+}
+
+model Product {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  stock       Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  orderDetails OrderDetail[]
+}
+
+model Order {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  status      String
+  total       Float
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  orderDetails OrderDetail[]
+}
+
+model OrderDetail {
+  id          Int         @id @default(autoincrement())
+  quantity    Int
+  price       Float       @default(0)
+  orderId     Int
+  order       Order       @relation(fields: [orderId], references: [id])
+  productId   Int
+  product     Product     @relation(fields: [productId], references: [id])
 }
 
 model Post {

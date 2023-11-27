@@ -7,13 +7,55 @@ import {
 } from "../auth/authUtils";
 import { isAdmin } from "../auth/authMiddleware";
 import bcrypt from "bcrypt";
+import * as Mailjet from "node-mailjet";
 
 const prisma = new PrismaClient();
 const router = Router();
 
+const mailjet = new Mailjet.Client({
+  apiKey: "faf56b76a3fad7223c71abbf7b3c2c26",
+  apiSecret: "17c319943ab7af2f1360ce26c18cef68",
+});
+
+// Email endpoint
+router.post("/send-email", async (req, res) => {
+  try {
+    const body = {
+      Messages: [
+        {
+          From: {
+            Email: "bamkadayat@gmail.com",
+            Name: "Sender Name",
+          },
+          To: [
+            {
+              Email: "bk@oblinor.no",
+              Name: "Receiver Name",
+            },
+          ],
+          Subject: "Test",
+          TextPart: "Test",
+          HTMLPart: "<h3>This is a test email</h3>",
+        },
+      ],
+    };
+
+    const result = await mailjet
+      .post("send", { version: "v3.1" })
+      .request(body);
+
+    res.status(200).json({ message: "Email sent successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while sending the email" });
+  }
+});
+
 // Insert user
 router.post("/", async (req, res) => {
-  const { username, fullname, password } = req.body;
+  const { username, fullname, password, email } = req.body;
 
   try {
     // Hash password before saving to the database
@@ -30,7 +72,7 @@ router.post("/", async (req, res) => {
 
     // Return the new user, but don't send the password back
     const { password: _, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
+    res.status(201).json({ ...userWithoutPassword });
   } catch (error: any) {
     // Handle potential errors, such as unique constraint violation
     res.status(400).json({ error: error.message });
