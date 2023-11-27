@@ -20,22 +20,29 @@ const mailjet = new Mailjet.Client({
 // Email endpoint
 router.post("/send-email", async (req, res) => {
   try {
+    const {
+      senderEmail,
+      senderName,
+      receiverEmail,
+      receiverName,
+      subject,
+      htmlPart,
+    } = req.body;
     const body = {
       Messages: [
         {
           From: {
-            Email: "bamkadayat@gmail.com",
-            Name: "Sender Name",
+            Email: senderEmail,
+            Name: senderName,
           },
           To: [
             {
-              Email: "bk@oblinor.no",
-              Name: "Receiver Name",
+              Email: receiverEmail,
+              Name: receiverName,
             },
           ],
-          Subject: "Test",
-          TextPart: "Test",
-          HTMLPart: "<h3>This is a test email</h3>",
+          Subject: subject,
+          HTMLPart: htmlPart,
         },
       ],
     };
@@ -55,20 +62,47 @@ router.post("/send-email", async (req, res) => {
 
 // Insert user
 router.post("/", async (req, res) => {
-  const { username, fullname, password, email } = req.body;
+  const { email, fullname, password } = req.body;
 
   try {
     // Hash password before saving to the database
     const hashedPassword = await hashPassword(password);
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already in use" });
+    }
 
     const newUser = await prisma.user.create({
       data: {
-        username,
+        email,
         fullname,
         password: hashedPassword,
         isValid: false,
       },
     });
+    const emailData = {
+      From: {
+        Email: "bamkadayat@gmail.com",
+        Name: "NodePrisma",
+      },
+      Subject: "Verify your email",
+      TextPart: "Please verify your email by clicking the following link:",
+      HTMLPart: `<a href="https://nodeprisma.com/verify?user=${newUser.id}">Verify Email</a>`,
+      To: [
+        {
+          Email: newUser.email,
+        },
+      ],
+    };
+
+    await mailjet
+      .post("send", { version: "v3.1" })
+      .request({ Messages: [emailData] });
 
     // Return the new user, but don't send the password back
     const { password: _, ...userWithoutPassword } = newUser;
@@ -79,24 +113,42 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/verify", async (req, res) => {
+  const userId = req.query.user;
+
+  try {
+    const user = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: {
+        isValid: true,
+        verifiedAt: new Date(),
+      },
+    });
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /login
 router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
   try {
-    // Find the user by username
+    // Find the user by email
     const user = await prisma.user.findUnique({
-      where: { username: username },
+      where: { email: email },
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Compare the provided password with the hashed password in the database
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Generate a token for the user
@@ -113,11 +165,11 @@ router.post("/login", async (req, res) => {
 // Endpoint to update a user
 router.patch("/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { username, fullname, password, role } = req.body;
+  const { email, fullname, password, role } = req.body;
 
   try {
     let updateData: any = {
-      username,
+      email,
       fullname,
       role,
     };
@@ -131,7 +183,7 @@ router.patch("/:userId", async (req, res) => {
       data: updateData,
       select: {
         id: true,
-        username: true,
+        email: true,
         fullname: true,
         createdAt: true,
       },
@@ -167,7 +219,7 @@ router.get("/", isAdmin, async (req, res) => {
     const users = await prisma.user.findMany({
       select: {
         id: true,
-        username: true,
+        email: true,
         fullname: true,
         role: true,
         createdAt: true,
@@ -200,7 +252,7 @@ router.get("/me", async (req, res) => {
       where: { id: userId },
       select: {
         id: true,
-        username: true,
+        email: true,
         fullname: true,
         role: true,
         createdAt: true,
