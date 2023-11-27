@@ -117,7 +117,10 @@ router.get("/verify", async (req, res) => {
   const userId = req.query.user;
 
   try {
-    const user = await prisma.user.update({
+    if (typeof userId !== "string") {
+      throw new Error("userId must be a string");
+    }
+    await prisma.user.update({
       where: { id: parseInt(userId) },
       data: {
         isValid: true,
