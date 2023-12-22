@@ -9,7 +9,7 @@ export const generateToken = (user: any) => {
   const secretKey = process.env.JWT_SECRET_KEY || "MY_SECRET_KEY";
   const payload = {
     id: user.id,
-    username: user.username,
+    email: user.email,
     role: user.role,
   };
   const options = { expiresIn: "2h" };

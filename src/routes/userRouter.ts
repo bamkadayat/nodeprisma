@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express from "express";
 import { PrismaClient } from "@prisma/client";
 import {
   generateToken,
@@ -8,9 +8,13 @@ import {
 import { isAdmin } from "../auth/authMiddleware";
 import bcrypt from "bcrypt";
 import * as Mailjet from "node-mailjet";
+import Stripe from "stripe";
+const stripe = new Stripe(
+  "sk_test_51OIFTEAYGh0z3iWqBrqrMVSH22uyKdF9tNsb1AuTjwqNPLqifibzoDarnLea9n2BqHf7uznjy6GiXBSV1eHVBjnS00nkcsxOiF"
+);
 
 const prisma = new PrismaClient();
-const router = Router();
+const router = express.Router();
 
 const mailjet = new Mailjet.Client({
   apiKey: "faf56b76a3fad7223c71abbf7b3c2c26",
@@ -92,7 +96,7 @@ router.post("/", async (req, res) => {
       },
       Subject: "Verify your email",
       TextPart: "Please verify your email by clicking the following link:",
-      HTMLPart: `<a href="https://nodeprisma.com/users/verify?user=${newUser.id}">Verify Email</a>`,
+      HTMLPart: `<a href="https://nodeprisma-front.vercel.app/verify/?user=${newUser.id}">Verify Email</a>`,
       To: [
         {
           Email: newUser.email,
@@ -224,7 +228,7 @@ router.get("/", isAdmin, async (req, res) => {
         id: true,
         email: true,
         fullname: true,
-        role: true,
+        isValid: true,
         createdAt: true,
         // Exclude password and other sensitive fields from the result
       },
@@ -274,4 +278,82 @@ router.get("/me", async (req, res) => {
   }
 });
 
-export const userRouter = router;
+// POST endpoint to add a new product
+router.post("/add-product", async (req, res) => {
+  const { name, price, description, stock } = req.body;
+  try {
+    const product = await prisma.product.create({
+      data: {
+        name,
+        price,
+        description,
+        stock,
+      },
+    });
+
+    res.json({ message: "Product added successfully", data: product });
+  } catch (error: any) {
+    console.error("Error adding product:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/orders", async (req, res) => {
+  const { userId, products } = req.body;
+  // Calculate the total price of the order
+  const total = products.reduce(
+    (sum: any, product: any) => sum + product.price * product.quantity,
+    0
+  );
+
+  const order = await prisma.order.create({
+    data: {
+      user: { connect: { id: userId } },
+      status: "processing",
+      total: total,
+      orderDetails: {
+        create: products.map((product: any) => ({
+          quantity: product.quantity,
+          price: product.price,
+          product: { connect: { id: product.id } },
+        })),
+      },
+    },
+    include: {
+      orderDetails: true,
+    },
+  });
+
+  res.json(order);
+});
+
+router.post("/pay", async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "nok",
+            product_data: {
+              name: "Addidas shoes",
+            },
+            unit_amount: 5 * 100, // Stripe expects the amount in cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: "http://localhost:3000/users/paid",
+      cancel_url: "http://localhost:3000/",
+    });
+    res.json({ urk: session.url });
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+});
+
+router.get("/paid", async (req, res) => {
+  res.send("Thank you for purchasing");
+});
+export { router as userRouter };
