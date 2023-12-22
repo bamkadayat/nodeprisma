@@ -117,8 +117,8 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/verify", async (req, res) => {
-  const userId = req.query.user;
+router.post("/verify", async (req, res) => {
+  const userId = req.body.userID;
 
   try {
     if (typeof userId !== "string") {
