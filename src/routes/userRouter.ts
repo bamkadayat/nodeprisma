@@ -96,7 +96,7 @@ router.post("/", async (req, res) => {
       },
       Subject: "Verify your email",
       TextPart: "Please verify your email by clicking the following link:",
-      HTMLPart: `<a href="https://nodeprisma-front.vercel.app/verify/?user=${newUser.id}">Verify Email</a>`,
+      HTMLPart: `<a href="https://nodeprisma-front.vercel.app/verify/${newUser.id}">Verify Email</a>`,
       To: [
         {
           Email: newUser.email,
