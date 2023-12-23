@@ -117,15 +117,18 @@ router.post("/", async (req, res) => {
   }
 });
 
+// verify email
 router.post("/verify", async (req, res) => {
   const userId = req.body.userID;
 
   try {
-    if (typeof userId !== "string") {
-      throw new Error("userId must be a string");
+    // Ensure userId is a number or a string that can be converted to a number
+    if (!userId || isNaN(Number(userId))) {
+      throw new Error("userId must be a number");
     }
+
     await prisma.user.update({
-      where: { id: parseInt(userId) },
+      where: { id: parseInt(userId, 10) }, // Ensure the conversion is done in base 10
       data: {
         isValid: true,
         verifiedAt: new Date(),
