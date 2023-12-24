@@ -141,6 +141,84 @@ router.post("/verify", async (req, res) => {
   }
 });
 
+// POST /forgot-password
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  try {
+    // Find the user by email
+    const user = await prisma.user.findUnique({
+      where: { email: email },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Generate a password reset token
+    const passwordResetToken = generateToken(user);
+
+    // Create a password reset link with the token
+    const passwordResetLink = `https://nodeprisma-front.vercel.app/reset-password?token=${passwordResetToken}`;
+
+    // Send the password reset link to the user's email address
+    const request = mailjet.post("send", { version: "v3.1" }).request({
+      Messages: [
+        {
+          From: { Email: "bamkadayat@gmail.com", Name: "Node Prisma" },
+          To: [{ Email: email }],
+          Subject: "Password Reset",
+          TextPart: `Click the following link to reset your password: ${passwordResetLink}`,
+        },
+      ],
+    });
+
+    request
+      .then(() => {
+        return res.status(200).json({ message: "Password reset link sent" });
+      })
+      .catch((err) => {
+        return res.status(500).json({ error: err.message });
+      });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /reset-password
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+  try {
+    // Get the user's ID from the token
+    const userId = getUserFromToken(token);
+
+    if (!userId) {
+      return res.status(400).json({ error: "Invalid token" });
+    }
+
+    // Find the user in the database
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Hash the new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update the user's password in the database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    return res.status(200).json({ message: "Password updated successfully" });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
