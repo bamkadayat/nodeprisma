@@ -158,7 +158,7 @@ router.post("/forgot-password", async (req, res) => {
     const passwordResetToken = generateToken(user);
 
     // Create a password reset link with the token
-    const passwordResetLink = `https://nodeprisma-front.vercel.app/reset-password?token=${passwordResetToken}`;
+    const passwordResetLink = `https://nodeprisma-front.vercel.app/reset-password/${passwordResetToken}`;
 
     // Send the password reset link to the user's email address
     const request = mailjet.post("send", { version: "v3.1" }).request({
