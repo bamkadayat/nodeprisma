@@ -97,7 +97,7 @@ router.post("/", async (req, res) => {
       Subject: "Verify your email",
       TextPart: "Please verify your email by clicking the following link:",
       HTMLPart: `<div style="font-family: Arial, sans-serif; color: #333;">
-      <h1 style="color: #000B20;">Welcome to NodePrisma, ${fullname}!</h1>
+      <h2 style="color: #000B20;">Welcome to NodePrisma, ${fullname}!</h2>
       <p>Thank you for signing up. Please confirm your email address to complete your registration.</p>
       <a href="https://nodeprisma-front.vercel.app/verify/${newUser.id}" style="background-color: #0DDFCB; color: #000B20; padding: 14px 25px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; margin: 10px 0;">Verify Email</a>
       <p>If you did not request this email, please ignore it.</p>
@@ -162,9 +162,6 @@ router.post("/forgot-password", async (req, res) => {
     // Generate a password reset token
     const passwordResetToken = generateToken(user);
 
-    // Create a password reset link with the token
-    const passwordResetLink = `https://nodeprisma-front.vercel.app/reset-password/${passwordResetToken}`;
-
     // Send the password reset link to the user's email address
     const request = mailjet.post("send", { version: "v3.1" }).request({
       Messages: [
@@ -172,7 +169,12 @@ router.post("/forgot-password", async (req, res) => {
           From: { Email: "bamkadayat@gmail.com", Name: "Node Prisma" },
           To: [{ Email: email }],
           Subject: "Password Reset",
-          TextPart: `Click the following link to reset your password: ${passwordResetLink}`,
+          TextPart: "Please reset your password",
+          HTMLPart: `<div style="font-family: Arial, sans-serif; color: #333;">
+          <h2 style="color: #000B20;">Please click the following link to reset your password</h2>
+          <a href="https://nodeprisma-front.vercel.app/reset-password/${passwordResetToken}" style="background-color: #0DDFCB; color: #000B20; padding: 14px 25px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; margin: 10px 0;">Click here</a>
+          <p>If you did not request this email, please ignore it.</p>
+        </div>`,
         },
       ],
     });
