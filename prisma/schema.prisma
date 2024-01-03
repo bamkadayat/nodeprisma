@@ -30,13 +30,13 @@ model User {
 
 model Product {
   id          Int          @id @default(autoincrement())
-  name        String
-  description String?
+  title       String
   price       Float
   stock       Int
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   orderDetails OrderDetail[]
+  additionalInfo Json?
 }
 
 model Order {
