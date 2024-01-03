@@ -371,8 +371,7 @@ router.get("/me", async (req, res) => {
   }
 });
 
-// POST endpoint to add a new product
-router.post("/add-product", async (req, res) => {
+router.post("/add-product", isAdmin, async (req, res) => {
   const { title, price, stock, additionalInfo } = req.body;
   try {
     const product = await prisma.product.create({
