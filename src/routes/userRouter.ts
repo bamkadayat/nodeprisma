@@ -9,12 +9,25 @@ import { isAdmin } from "../auth/authMiddleware";
 import bcrypt from "bcrypt";
 import * as Mailjet from "node-mailjet";
 import Stripe from "stripe";
+import multer from "multer";
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage });
+
 const stripe = new Stripe(
   "sk_test_51OIFTEAYGh0z3iWqBrqrMVSH22uyKdF9tNsb1AuTjwqNPLqifibzoDarnLea9n2BqHf7uznjy6GiXBSV1eHVBjnS00nkcsxOiF"
 );
 
 const prisma = new PrismaClient();
 const router = express.Router();
+const app = express();
+app.use("/uploads", express.static("uploads"));
 
 const mailjet = new Mailjet.Client({
   apiKey: "faf56b76a3fad7223c71abbf7b3c2c26",
@@ -370,25 +383,43 @@ router.get("/me", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+//inserting product
+router.post(
+  "/add-product",
+  isAdmin,
+  upload.single("file"),
+  async (req, res) => {
+    const { title, price, stock, additionalInfo } = req.body;
 
-router.post("/add-product", isAdmin, async (req, res) => {
-  const { title, price, stock, additionalInfo } = req.body;
-  try {
-    const product = await prisma.product.create({
-      data: {
-        title,
-        price,
-        stock,
-        additionalInfo,
-      },
-    });
+    let imageUrl = "";
+    if (req.file) {
+      imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
+        req.file.filename
+      }`;
+    }
 
-    res.json({ message: "Product added successfully", data: product });
-  } catch (error: any) {
-    console.error("Error adding product:", error);
-    res.status(500).json({ error: error.message });
+    // Add a check for required fields
+    if (!title || !price || !stock) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      const product = await prisma.product.create({
+        data: {
+          title,
+          price,
+          stock,
+          additionalInfo,
+          imageUrl,
+        },
+      });
+      res.json({ message: "Product added successfully", data: product });
+    } catch (error: any) {
+      console.error("Error adding product:", error);
+      res.status(500).json({ error: error.message });
+    }
   }
-});
+);
 
 router.post("/orders", async (req, res) => {
   const { userId, products } = req.body;
